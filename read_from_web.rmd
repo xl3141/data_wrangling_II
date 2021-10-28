@@ -1,0 +1,118 @@
+---
+title: "data_wrangling_II"
+author: "Xinyuan Liu"
+date: "10/19/2021"
+output: github_document
+---
+
+```{r}
+library(tidyverse)
+library(rvest)
+library(httr)
+```
+
+```{r}
+url = "http://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm"
+drug_use_html = read_html(url) ## read url link
+ 
+drug_use_df =
+  drug_use_html %>% 
+    html_table() %>% ## give me the table in the html page
+    first() %>% ## take the first table
+    slice(-1) ## remove the first row 
+```
+
+## Star Wars
+
+get some star wars data   
+
+```{r}
+sw_url = "https://www.imdb.com/list/ls070150896/"
+
+sw_html = 
+  read_html(sw_url)
+
+title_vec = 
+  sw_html %>%
+  html_elements(".lister-item-header a") %>%
+  html_text() ## convert html to text
+
+## CSS selector: select the items that you want and then click on the items that you don't want to the the elements 
+
+gross_rev_vec = 
+  sw_html %>%
+  html_elements(".text-muted .ghost~ .text-muted+ span") %>%
+  html_text()
+
+
+sw_df = 
+  tibble(
+    title = title_vec,
+    rev = gross_rev_vec
+    )
+```
+
+## napolean dynamite
+
+
+```{r}
+dynamite_url = "https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber=1"
+
+dynamite_html =
+  read_html(dynamite_url)
+
+dynamite_review_titles =
+  dynamite_html %>% 
+  html_elements(".a-text-bold span") %>% 
+  html_text()
+
+dynamite_stars = 
+  dynamite_html %>% 
+  html_elements("#cm_cr-review_list .review-rating") %>% 
+  html_text()
+
+dynamite_df = 
+  tibble(
+    titles = dynamite_review_titles,
+    stars = dynamite_stars
+  )
+```
+
+## try some API
+
+```{r}
+water_df = 
+  GET("https://data.cityofnewyork.us/resource/ia2d-e54m.csv") %>% ##API command: get something from url
+  content() ##parse it into a data frame that is useful
+```
+
+Let's see what JSON looks like
+
+```{r}
+water_df = 
+  GET("https://data.cityofnewyork.us/resource/ia2d-e54m.json") %>% 
+  content("text") %>% 
+  jsonlite::fromJSON() %>% 
+  as_tibble()
+```
+
+BRFSS data via API
+
+```{r}
+brfss_df = 
+  GET("https://chronicdata.cdc.gov/resource/acme-vg9e.csv", query = list("$limit" = 5000)) %>% ## change the query limit into 5000   
+  content()
+```
+
+## Pokemon
+
+```{r}
+poke_data = 
+  GET("https://pokeapi.co/api/v2/pokemon/1") %>% 
+  content()
+
+poke_data[["height"]]
+poke_data[["name"]]
+poke_data[["abilities"]]
+```
+
